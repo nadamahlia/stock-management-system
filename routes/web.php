@@ -1,6 +1,8 @@
+
 <?php
 
 use App\Http\Controllers\FamilyController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
@@ -20,13 +22,21 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Toutes les routes protégées par authentification
 Route::middleware('auth')->group(function () {
+
+    // Orders
+    Route::post('/products/{product}/buy', [OrderController::class, 'store'])
+        ->name('orders.store');
+
+    Route::get('/orders', [OrderController::class, 'index'])
+        ->name('orders.index');
 
     // Products CRUD
     Route::resource('products', ProductController::class)
         ->except(['show']);
 
-    // Family creation
+    // Families
     Route::get('/families/create', [FamilyController::class, 'create'])
         ->name('families.create');
 
@@ -42,6 +52,9 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
+        Route::get('/datatable-test', function () {
+    return Inertia::render('DataTableTest');
+})->name('datatable.test');
 });
 
 require __DIR__.'/auth.php';

@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Fragment, useState } from 'react';
+import { Fragment,useEffect, useState } from 'react';
 
 interface Family {
     id: number;
@@ -51,6 +51,22 @@ export default function Index({ products, authUser }: Props) {
     const [detailsProductId, setDetailsProductId] = useState<number | null>(
         null,
     );
+    const [search, setSearch] = useState('');
+    useEffect(() => {
+    const timeout = setTimeout(() => {
+        router.get(
+            '/products',
+            { name: search },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    }, 500);
+
+    return () => clearTimeout(timeout);
+}, [search]);
 
     const canCreate = ['admin', 'user'].includes(authUser.role);
 
@@ -118,27 +134,51 @@ export default function Index({ products, authUser }: Props) {
                         </p>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        {canCreate && (
-                            <Link
-                                href="/products/create"
-                                style={primaryButtonStyle}
-                            >
-                                + Déposer une annonce
-                            </Link>
-                        )}
+                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+    {canCreate && (
+        <Link
+            href="/products/create"
+            style={primaryButtonStyle}
+        >
+            + Déposer une annonce
+        </Link>
+    )}
 
-                        <button
-                            type="button"
-                            onClick={logout}
-                            style={secondaryButtonStyle}
-                        >
-                            Déconnexion
-                        </button>
-                    </div>
+    <Link
+        href="/orders"
+        style={secondaryButtonStyle}
+    >
+        Mes commandes
+    </Link>
+
+    <button
+        type="button"
+        onClick={logout}
+        style={secondaryButtonStyle}
+    >
+        Déconnexion
+    </button>
+</div>
+                    
                 </header>
 
                 <div style={{ overflowX: 'auto' }}>
+                    <div style={{ marginBottom: '20px' }}>
+    <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Rechercher un produit..."
+        style={{
+            width: '100%',
+            maxWidth: '400px',
+            padding: '12px',
+            border: '1px solid #ccc',
+            borderRadius: '6px',
+            fontSize: '15px',
+        }}
+    />
+</div>
                     <table
                         style={{
                             width: '100%',

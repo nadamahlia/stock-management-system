@@ -52,4 +52,15 @@ class User extends Authenticatable implements PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
+    // Les commandes passées par cet utilisateur
+public function purchases(): HasMany
+{
+    return $this->hasMany(Order::class, 'buyer_id');
+}
+
+// Les commandes reçues pour ses produits
+public function sales(): HasMany
+{
+    return $this->hasMany(Order::class, 'seller_id');
+}
 }
