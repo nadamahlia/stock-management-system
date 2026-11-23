@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Fragment,useEffect, useState } from 'react';
-
+import DataTableFilters from '@/components/DataTable/DataTableFilters';
+import type { DataTableColumn, DataTableFilter } from '@/components/DataTable/types';
 interface Family {
     id: number;
     name: string;
@@ -47,16 +48,32 @@ interface Props {
 }
 
 export default function Index({ products, authUser }: Props) {
+    const productFilterColumns: DataTableColumn[] = [
+    { key: 'name', label: 'Produit', type: 'text' },
+    { key: 'family_id', label: 'Famille', type: 'number' },
+    { key: 'image_link', label: 'Image', type: 'text', filterable: false },
+    { key: 'price', label: 'Prix', type: 'number' },
+    { key: 'status', label: 'Statut', type: 'text' },
+    { key: 'actions', label: 'Actions', type: 'text', filterable: false },
+];
     const [openMenuId, setOpenMenuId] = useState<number | null>(null);
     const [detailsProductId, setDetailsProductId] = useState<number | null>(
-        null,
-    );
+        null,);
     const [search, setSearch] = useState('');
+    const [advancedFilters, setAdvancedFilters] = useState<DataTableFilter[]>([]);
+    const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+    const [showSelectionDetails, setShowSelectionDetails] = useState(false);
+    const selectedProducts = products.data.filter((product) =>
+        selectedProductIds.includes(product.id),
+    );
     useEffect(() => {
     const timeout = setTimeout(() => {
         router.get(
             '/products',
-            { name: search },
+            {
+                name: search,
+     filters: JSON.stringify(advancedFilters),
+            },
             {
                 preserveState: true,
                 preserveScroll: true,
@@ -66,7 +83,8 @@ export default function Index({ products, authUser }: Props) {
     }, 500);
 
     return () => clearTimeout(timeout);
-}, [search]);
+}, [search, advancedFilters]);
+
 
     const canCreate = ['admin', 'user'].includes(authUser.role);
 
@@ -179,7 +197,165 @@ export default function Index({ products, authUser }: Props) {
         }}
     />
 </div>
-                    <table
+{selectedProductIds.length > 0 && (
+    <div
+        style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            marginBottom: '12px',
+            padding: '12px 16px',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '8px',
+            color: '#1d4ed8',
+            fontSize: '14px',
+            fontWeight: 500,
+        }}
+    >
+        <span>
+            {selectedProductIds.length} produit(s) sélectionné(s)
+        </span>
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+                type="button"
+                onClick={() => setShowSelectionDetails((visible) => !visible)}
+                style={{
+                    padding: '8px 12px',
+                    border: '1px solid #2563eb',
+                    borderRadius: '6px',
+                    backgroundColor: '#2563eb',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                }}
+            >
+                {showSelectionDetails ? 'Masquer la sélection' : 'Voir la sélection'}
+            </button>
+
+            <button
+                type="button"
+                onClick={() => {
+                    setSelectedProductIds([]);
+                    setShowSelectionDetails(false);
+                }}
+                style={{
+                    padding: '8px 12px',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '6px',
+                    backgroundColor: 'white',
+                    color: '#1d4ed8',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                }}
+            >
+                Tout désélectionner
+            </button>
+        </div>
+    </div>
+)}
+{showSelectionDetails && (
+    <section
+        aria-label="Détails des produits sélectionnés"
+        style={{
+            marginBottom: '20px',
+            padding: '20px',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)',
+        }}
+    >
+        <div
+            style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '12px',
+                marginBottom: '16px',
+            }}
+        >
+            <div>
+                <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>
+                    Produits sélectionnés
+                </h2>
+                <p style={{ margin: '5px 0 0', color: '#64748b', fontSize: '13px' }}>
+                    Détails des produits sélectionnés sur cette page
+                </p>
+            </div>
+            <button
+                type="button"
+                onClick={() => setShowSelectionDetails(false)}
+                style={{ ...secondaryButtonStyle, padding: '7px 11px' }}
+            >
+                Fermer
+            </button>
+        </div>
+
+        {selectedProducts.length === 0 ? (
+            <p style={{ margin: 0, color: '#64748b' }}>
+                Aucun produit sélectionné n'est présent sur cette page.
+            </p>
+        ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                {selectedProducts.map((product) => (
+                    <article
+                        key={product.id}
+                        style={{
+                            padding: '14px',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            backgroundColor: '#f8fafc',
+                            minWidth: 0,
+                        }}
+                    >
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                            {product.image_link ? (
+                                <img
+                                    src={product.image_link}
+                                    alt={product.name}
+                                    width="58"
+                                    height="58"
+                                    style={{ objectFit: 'cover', borderRadius: '7px', flexShrink: 0 }}
+                                />
+                            ) : (
+                                <div style={{ width: '58px', height: '58px', borderRadius: '7px', backgroundColor: '#e2e8f0', display: 'grid', placeItems: 'center', color: '#64748b', fontSize: '11px', flexShrink: 0 }}>
+                                    Pas d'image
+                                </div>
+                            )}
+                            <div style={{ minWidth: 0 }}>
+                                <h3 style={{ margin: '0 0 4px', fontSize: '15px', color: '#0f172a', overflowWrap: 'anywhere' }}>
+                                    {product.name}
+                                </h3>
+                                <span style={{ color: '#64748b', fontSize: '12px' }}>
+                                    {product.family?.name ?? 'Sans famille'}
+                                </span>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '9px', fontSize: '13px' }}>
+                            <span style={{ color: '#64748b' }}>Prix</span>
+                            <strong style={{ color: '#0f172a', textAlign: 'right' }}>{formatPrice(product.price)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '10px', fontSize: '13px' }}>
+                            <span style={{ color: '#64748b' }}>Statut</span>
+                            <strong style={{ color: product.status === 'sold' ? '#b91c1c' : '#15803d' }}>
+                                {fieldLabel(product.status)}
+                            </strong>
+                        </div>
+                        <p style={{ margin: 0, paddingTop: '10px', borderTop: '1px solid #e2e8f0', color: '#475569', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                            {product.description?.trim() || 'Aucune description fournie.'}
+                        </p>
+                    </article>
+                ))}
+            </div>
+        )}
+    </section>
+)}
+<table
                         style={{
                             width: '100%',
                             borderCollapse: 'collapse',
@@ -187,23 +363,69 @@ export default function Index({ products, authUser }: Props) {
                         }}
                     >
                         <thead>
-                            <tr>
-                                <th style={thStyle}>Produit</th>
-                                <th style={thStyle}>Famille</th>
-                                <th style={thStyle}>Image</th>
-                                <th style={thStyle}>Prix</th>
-                                <th style={thStyle}>Statut</th>
-                                <th style={thStyle}>Actions</th>
-                            </tr>
-                        </thead>
+   <tr>
+    <th style={thStyle}>
+        <input
+            type="checkbox"
+            checked={
+                products.data.length > 0 &&
+                products.data.every((product) =>
+                    selectedProductIds.includes(product.id),
+                )
+            }
+            onChange={(e) => {
+                if (e.target.checked) {
+                    setSelectedProductIds(
+                        products.data.map((product) => product.id),
+                    );
+                } else {
+                    setSelectedProductIds([]);
+                }
+            }}
+        />
+    </th>
+    <th style={thStyle}>Produit</th>
+    <th style={thStyle}>Famille</th>
+    <th style={thStyle}>Image</th>
+    <th style={thStyle}>Prix</th>
+    <th style={thStyle}>Statut</th>
+    <th style={thStyle}>Actions</th>
+</tr>
+    <tr>
+        <DataTableFilters
+            columns={productFilterColumns}
+            onFiltersChange={setAdvancedFilters}
+        />
+    </tr>
+</thead>
 
                         <tbody>
-                            {products.data.map((product) => (
-                                <Fragment key={product.id}>
-                                    <tr>
-                                        <td style={tdStyle}>
-                                            <strong>{product.name}</strong>
-                                        </td>
+    {products.data.map((product) => (
+        <Fragment key={product.id}>
+            <tr>
+                {/* Selection checkbox */}
+                <td style={tdStyle}>
+                    <input
+                        type="checkbox"
+                        checked={selectedProductIds.includes(product.id)}
+                        onChange={(e) => {
+                            if (e.target.checked) {
+                                setSelectedProductIds((previous) => [
+                                    ...previous,
+                                    product.id,
+                                ]);
+                            } else {
+                                setSelectedProductIds((previous) =>
+                                    previous.filter((id) => id !== product.id),
+                                );
+                            }
+                        }}
+                    />
+                </td>
+
+                <td style={tdStyle}>
+                    <strong>{product.name}</strong>
+                </td>
 
                                         <td style={tdStyle}>
                                             {product.family?.name ??
@@ -336,7 +558,7 @@ export default function Index({ products, authUser }: Props) {
                                     {detailsProductId === product.id && (
                                         <tr>
                                             <td
-                                                colSpan={6}
+                                                colSpan={7}
                                                 style={{
                                                     ...tdStyle,
                                                     backgroundColor: '#f8fafc',
@@ -404,7 +626,7 @@ export default function Index({ products, authUser }: Props) {
                             {products.data.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={6}
+                                        colSpan={7}
                                         style={{
                                             ...tdStyle,
                                             textAlign: 'center',

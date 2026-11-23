@@ -20,7 +20,7 @@ export default function DataTableSummary<T>({
 
                 const result =
                     aggregation.type === 'sum'
-                        ? values.reduce(
+                        ? values.reduce<number>(
                               (total, value) => total + Number(value || 0),
                               0,
                           )
@@ -30,7 +30,7 @@ export default function DataTableSummary<T>({
                     <div key={`${aggregation.column}-${aggregation.type}`}>
                         <strong>{aggregation.label || aggregation.column} :</strong>
                         {' '}
-                        {result}
+                        {String(result)}
                     </div>
                 );
             })}

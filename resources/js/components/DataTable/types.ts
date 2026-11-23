@@ -32,4 +32,18 @@ export interface DataTableProps<T> {
     data: T[];
     columns: DataTableColumn[];
     loading?: boolean;
+    
+}
+export type AggregationType = 'sum' | 'count';
+
+export interface DataTableAggregation {
+    column: string;
+    type: AggregationType;
+    label?: string;
+}
+export interface DataTableProps<T> {
+    data: T[];
+    columns: DataTableColumn[];
+    loading?: boolean;
+    aggregations?: DataTableAggregation[];
 }

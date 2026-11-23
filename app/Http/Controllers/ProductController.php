@@ -10,7 +10,9 @@ use Inertia\Inertia;
 class ProductController extends Controller
 {
    public function index(Request $request)
-{
+{  
+   
+
     $query = Product::with('family');
 
     // Filtre par nom du produit
@@ -40,6 +42,104 @@ class ProductController extends Controller
     if (in_array($status, ['available', 'sold'], true)) {
         $query->where('status', $status);
     }
+
+// Filtres avancés du DataTable
+$allowedColumns = [
+    'name' => 'text',
+    'family_id' => 'number',
+    'price' => 'number',
+    'status' => 'text',
+];
+
+$filters = $request->input('filters', '[]');
+
+if (is_string($filters)) {
+    $filters = json_decode($filters, true) ?? [];
+}
+
+if (is_array($filters)) {
+    foreach ($filters as $filter) {
+        if (!is_array($filter)) {
+            continue;
+        }
+
+        $column = $filter['column'] ?? '';
+        $operator = $filter['operator'] ?? '';
+        $value = $filter['value'] ?? null;
+
+        // Vérifier la colonne autorisée
+        if (!isset($allowedColumns[$column])) {
+            continue;
+        }
+
+        // Gestion des valeurs NULL
+        if ($operator === 'is_null') {
+            $query->whereNull($column);
+            continue;
+        }
+
+        if ($operator === 'is_not_null') {
+            $query->whereNotNull($column);
+            continue;
+        }
+
+        // Ignorer les valeurs vides ou invalides
+        if (!is_scalar($value) || $value === '') {
+            continue;
+        }
+
+        // Filtres numériques
+        if ($allowedColumns[$column] === 'number') {
+            if (!is_numeric($value)) {
+                continue;
+            }
+
+            $number = (float) $value;
+
+            switch ($operator) {
+                case 'equals':
+                    $query->where($column, '=', $number);
+                    break;
+
+                case 'not_equals':
+                    $query->where($column, '<>', $number);
+                    break;
+
+                case 'gt':
+                    $query->where($column, '>', $number);
+                    break;
+
+                case 'lt':
+                    $query->where($column, '<', $number);
+                    break;
+            }
+        }
+
+        // Filtres textuels
+        if ($allowedColumns[$column] === 'text') {
+            $text = (string) $value;
+
+            switch ($operator) {
+                case 'contains':
+                    $query->where($column, 'ilike', "%{$text}%");
+                    break;
+
+                case 'not_contains':
+                    $query->where($column, 'not ilike', "%{$text}%");
+                    break;
+
+                case 'starts_with':
+                    $query->where($column, 'ilike', "{$text}%");
+                    break;
+
+                case 'ends_with':
+                    $query->where($column, 'ilike', "%{$text}");
+                    break;
+            }
+        }
+    }
+}
+
 
     // Pagination : 10 produits par page
     $products = $query
